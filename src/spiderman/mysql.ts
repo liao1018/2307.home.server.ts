@@ -11,8 +11,8 @@ const createDatabase = (): Database => {
   const connect = async (): Promise<void> => {
     connection = await mysql.createConnection({
       host: "localhost",
-      user: "root",
-      password: "sa730919",
+      user: process.env.MYSQL_USER,
+      password: process.env.MYSQL_PASSWORD,
       database: "home",
     });
   };
