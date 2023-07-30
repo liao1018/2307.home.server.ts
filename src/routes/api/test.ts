@@ -1,4 +1,4 @@
-import spiderman from "../../spiderman";
+import spiderman from "@/spiderman";
 import express, { Request, Response } from "express";
 
 const router = express.Router();

@@ -1,3 +1,4 @@
+require("module-alias/register");
 // 使用 .env
 import dotenv from "dotenv";
 dotenv.config();
@@ -5,8 +6,9 @@ dotenv.config();
 import express from "express";
 import http from "http";
 // import https from 'https';
-import spiderman from "./spiderman";
-import routes from "./routes";
+import spiderman from "@/spiderman";
+
+import routes from "@/routes";
 
 (async () => {
   await spiderman.mysql.connect();
