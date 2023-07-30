@@ -6,26 +6,39 @@ const router = express.Router();
 
 const refreshTokens: string[] = [];
 
-router.post("/login", (req: Request, res: Response) => {
-  const user = { name: "test" };
-  const accessToken = spiderman.jwt.generateAccessToken(user);
-  const refreshToken = spiderman.jwt.generateRefreshToken(user);
-  refreshTokens.push(refreshToken);
-  console.log("refreshTokens:", refreshTokens);
+router.post(
+  "/login",
+  spiderman.express.catchAsync(async (req: Request, res: Response) => {
+    const { username, password } = req.body;
+    const accounts = await spiderman.mysql.query(
+      `SELECT * FROM accounts WHERE username LIKE '${username}' AND passwoed = '${password}';`
+    );
+    const account = accounts[0];
+    if (!account) throw new ApiError(401);
 
-  res.status(200).json({
-    accessToken,
-    refreshToken,
-  });
-});
+    const tokenPayload = {
+      username: account.username,
+    };
+    const accessToken = spiderman.jwt.generateAccessToken(tokenPayload);
+    const refreshToken = spiderman.jwt.generateRefreshToken(tokenPayload);
+    refreshTokens.push(refreshToken);
+    console.log("refreshTokens:", refreshTokens);
+
+    res.status(200).json({
+      accessToken,
+      refreshToken,
+      account,
+    });
+  })
+);
 
 router.post("/token", (req: Request, res: Response) => {
   const refreshToken = req.body.token;
   if (refreshToken == null) throw new ApiError(401);
   if (!refreshTokens.includes(refreshToken)) throw new ApiError(403);
 
-  const user = spiderman.jwt.decryptRefreshToken(refreshToken);
-  const accessToken = spiderman.jwt.generateAccessToken(user);
+  const tokenPayload = spiderman.jwt.decryptRefreshToken(refreshToken);
+  const accessToken = spiderman.jwt.generateAccessToken(tokenPayload);
 
   res.status(200).json({
     accessToken,

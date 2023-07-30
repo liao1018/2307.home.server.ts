@@ -1,34 +1,34 @@
 import jwt, { JwtPayload } from "jsonwebtoken";
 
 export default () => {
-  function generateAccessToken({ name }: { name: string }): string {
-    return jwt.sign({ name }, process.env.ACCESS_TOKEN_SECRET || "", {
+  function generateAccessToken({ username }: { username: string }): string {
+    return jwt.sign({ username }, process.env.ACCESS_TOKEN_SECRET || "", {
       expiresIn: "15s",
     });
   }
 
-  function decryptAccessToken(token: string): { name: string } {
+  function decryptAccessToken(token: string): { username: string } {
     const payload = jwt.verify(
       token,
       process.env.ACCESS_TOKEN_SECRET || ""
     ) as JwtPayload;
 
-    const { name } = payload;
-    return { name };
+    const { username } = payload;
+    return { username };
   }
 
-  function generateRefreshToken({ name }: { name: string }): string {
-    return jwt.sign({ name }, process.env.REFRESH_TOKEN_SECRET || "");
+  function generateRefreshToken({ username }: { username: string }): string {
+    return jwt.sign({ username }, process.env.REFRESH_TOKEN_SECRET || "");
   }
 
-  function decryptRefreshToken(token: string): { name: string } {
+  function decryptRefreshToken(token: string): { username: string } {
     const payload = jwt.verify(
       token,
       process.env.REFRESH_TOKEN_SECRET || ""
     ) as JwtPayload;
 
-    const { name } = payload;
-    return { name };
+    const { username } = payload;
+    return { username };
   }
 
   return {

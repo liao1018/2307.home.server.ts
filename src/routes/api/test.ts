@@ -17,11 +17,14 @@ router.get(
 
     const user = spiderman.jwt.decryptAccessToken(token);
 
-    const databases = await spiderman.mysql.query("SHOW DATABASES");
+    const accounts = await spiderman.mysql.query(
+      `SELECT * FROM accounts WHERE username LIKE 'Admin' AND passwoed = '123456';`
+    );
+    const account = accounts[0];
 
     res.status(200).json({
       user,
-      databases,
+      account,
     });
   })
 );
