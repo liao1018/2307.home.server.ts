@@ -1,11 +1,12 @@
 import spiderman from "@/spiderman";
+import { ApiError } from "@/classes";
 import express, { Request, Response } from "express";
 
 const router = express.Router();
 
 const refreshTokens: string[] = [];
 
-router.post("/login", async (req: Request, res: Response) => {
+router.post("/login", (req: Request, res: Response) => {
   const user = { name: "test" };
   const accessToken = spiderman.jwt.generateAccessToken(user);
   const refreshToken = spiderman.jwt.generateRefreshToken(user);
@@ -17,10 +18,10 @@ router.post("/login", async (req: Request, res: Response) => {
   });
 });
 
-router.post("/token", async (req: Request, res: Response) => {
+router.post("/token", (req: Request, res: Response) => {
   const refreshToken = req.body.token;
-  if (refreshToken == null) throw new Error("401");
-  if (!refreshTokens.includes(refreshToken)) throw new Error("403");
+  if (refreshToken == null) throw new ApiError(401);
+  if (!refreshTokens.includes(refreshToken)) throw new ApiError(403);
 
   const user = spiderman.jwt.decryptRefreshToken(refreshToken);
   const accessToken = spiderman.jwt.generateAccessToken(user);

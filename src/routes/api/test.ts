@@ -1,4 +1,5 @@
 import spiderman from "@/spiderman";
+import { ApiError } from "@/classes";
 import express, { Request, Response } from "express";
 
 const router = express.Router();
@@ -12,7 +13,7 @@ router.get(
       return authHeader?.split(" ")[1];
     })();
 
-    if (!token) throw Error("401");
+    if (!token) throw new ApiError(401);
 
     const user = spiderman.jwt.decryptAccessToken(token);
 
