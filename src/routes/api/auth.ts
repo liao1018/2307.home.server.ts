@@ -11,6 +11,7 @@ router.post("/login", (req: Request, res: Response) => {
   const accessToken = spiderman.jwt.generateAccessToken(user);
   const refreshToken = spiderman.jwt.generateRefreshToken(user);
   refreshTokens.push(refreshToken);
+  console.log("refreshTokens:", refreshTokens);
 
   res.status(200).json({
     accessToken,
@@ -33,6 +34,7 @@ router.post("/token", (req: Request, res: Response) => {
 
 router.delete("/logout", (req: Request, res: Response) => {
   refreshTokens.splice(refreshTokens.indexOf(req.body.token), 1);
+  console.log("refreshTokens:", refreshTokens);
 
   res.status(200).json({
     message: "success",
