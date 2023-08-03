@@ -11,10 +11,19 @@ router.post(
   spiderman.express.catchAsync(async (req: Request, res: Response) => {
     const { username, password } = req.body;
     const accounts = await spiderman.mysql.query(
-      `SELECT * FROM accounts WHERE username LIKE '${username}' AND passwoed = '${password}';`
+      `SELECT * FROM accounts WHERE username LIKE '${username}';`
     );
     const account = accounts[0];
     if (!account) throw new ApiError(401);
+
+    // 加密方式
+    // const saltRounds = 10;
+    // const hash = spiderman.bcrypt.hashSync(myPassword, saltRounds);
+    const isPasswordValid = await spiderman.bcrypt.compare(
+      password,
+      account.password
+    );
+    if (!isPasswordValid) throw new ApiError(401);
 
     const tokenPayload = {
       username: account.username,
