@@ -11,8 +11,6 @@ import spiderman from "@/spiderman";
 import routes from "@/routes";
 
 (async () => {
-  await spiderman.mysql.connect();
-
   const app = express();
   app.use(spiderman.express.log);
   app.use(express.json());

@@ -10,9 +10,11 @@ router.post(
   "/login",
   spiderman.express.catchAsync(async (req: Request, res: Response) => {
     const { username, password } = req.body;
-    const accounts = await spiderman.mysql.query(
-      `SELECT * FROM accounts WHERE username LIKE '${username}';`
-    );
+    const accounts = await spiderman
+      .knex("accounts")
+      .select("*")
+      .where("username", "like", `${username}`);
+
     const account = accounts[0];
     if (!account) throw new ApiError(401);
 

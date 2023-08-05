@@ -17,9 +17,9 @@ router.get(
 
     const user = spiderman.jwt.decryptAccessToken(token);
 
-    const accounts = await spiderman.mysql.query(
-      `SELECT * FROM accounts WHERE username LIKE 'Admin' AND passwoed = '123456';`
-    );
+    const accounts = await spiderman
+      .knex("accounts")
+      .where({ username: "Admin", password: "123456" });
     const account = accounts[0];
 
     res.status(200).json({
