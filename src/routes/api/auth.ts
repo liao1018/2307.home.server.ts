@@ -7,7 +7,15 @@ const router = express.Router();
 router.post(
   "/sign-up",
   spiderman.express.catchAsync(async (req: Request, res: Response) => {
-    const { username, password } = req.body;
+    const { username, password } = (() => {
+      const schema = spiderman.z.object({
+        username: spiderman.z.string(),
+        password: spiderman.z.string(),
+      });
+
+      return schema.parse(req.body);
+    })();
+
     const account = (
       await spiderman
         .knex("accounts")
@@ -35,7 +43,15 @@ router.post(
 router.post(
   "/login",
   spiderman.express.catchAsync(async (req: Request, res: Response) => {
-    const { username, password } = req.body;
+    const { username, password } = (() => {
+      const schema = spiderman.z.object({
+        username: spiderman.z.string(),
+        password: spiderman.z.string(),
+      });
+
+      return schema.parse(req.body);
+    })();
+
     const accounts = await spiderman
       .knex("accounts")
       .select("*")
@@ -90,7 +106,12 @@ router.post(
 router.post(
   "/token",
   spiderman.express.catchAsync(async (req: Request, res: Response) => {
-    const refreshToken = req.body.token;
+    const refreshToken = (() => {
+      const schema = spiderman.z.string();
+
+      return schema.parse(req.body.refreshToken);
+    })();
+
     if (refreshToken == null) throw new ApiError(401);
 
     const userToken = (
@@ -112,10 +133,16 @@ router.post(
 router.delete(
   "/logout",
   spiderman.express.catchAsync(async (req: Request, res: Response) => {
+    const refreshToken = (() => {
+      const schema = spiderman.z.string();
+
+      return schema.parse(req.body.refreshToken);
+    })();
+
     await spiderman
       .knex("user_tokens")
       .where({
-        token: req.body.token,
+        token: refreshToken,
       })
       .delete();
 
