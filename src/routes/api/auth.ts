@@ -7,35 +7,46 @@ const router = express.Router();
 router.post(
   "/sign-up",
   spiderman.express.catchAsync(async (req: Request, res: Response) => {
-    const { username, password } = (() => {
+    const { username, password, permissions } = (() => {
       const schema = spiderman.z.object({
         username: spiderman.z.string(),
         password: spiderman.z.string(),
+        permissions: spiderman.z.array(spiderman.z.number()),
       });
 
       return schema.parse(req.body);
     })();
 
-    const account = (
-      await spiderman
-        .knex("accounts")
-        .select("*")
-        .where("username", "like", `${username}`)
-    )[0];
+    const account = await spiderman
+      .knex("accounts")
+      .select("*")
+      .where("username", "like", `${username}`)
+      .first();
 
     if (account) throw new ApiError(400, "duplicate username.");
 
     const saltRounds = 10;
     const hash = spiderman.bcrypt.hashSync(password, saltRounds);
 
-    const result = await spiderman.knex("accounts").insert({
-      username,
-      password: hash,
+    await spiderman.knex.transaction(async (trx) => {
+      const result = await trx("accounts").insert({
+        username,
+        password: hash,
+      });
+
+      const accountId = result[0];
+      await trx("account_has_permission").insert(
+        permissions.map((permission) => {
+          return {
+            account_id: accountId,
+            permission_id: permission,
+          };
+        })
+      );
     });
 
     res.status(200).json({
       message: "success",
-      result,
     });
   })
 );
@@ -52,12 +63,12 @@ router.post(
       return schema.parse(req.body);
     })();
 
-    const accounts = await spiderman
+    const account = await spiderman
       .knex("accounts")
       .select("*")
-      .where("username", "like", `${username}`);
+      .where("username", "like", `${username}`)
+      .first();
 
-    const account = accounts[0];
     if (!account) throw new ApiError(401);
 
     // 加密方式
@@ -73,11 +84,13 @@ router.post(
     const accessToken = spiderman.jwt.generateAccessToken(tokenPayload);
     const refreshToken = spiderman.jwt.generateRefreshToken(tokenPayload);
 
-    const userToken = (
-      await spiderman.knex("user_tokens").select("*").where({
+    const userToken = await spiderman
+      .knex("user_tokens")
+      .select("*")
+      .where({
         account_id: account.id,
       })
-    )[0];
+      .first();
 
     if (userToken) {
       await spiderman
@@ -114,11 +127,13 @@ router.post(
 
     if (refreshToken == null) throw new ApiError(401);
 
-    const userToken = (
-      await spiderman.knex("user_tokens").select("*").where({
+    const userToken = await spiderman
+      .knex("user_tokens")
+      .select("*")
+      .where({
         token: refreshToken,
       })
-    )[0];
+      .first();
     if (!userToken) throw new ApiError(403);
 
     const tokenPayload = spiderman.jwt.decryptRefreshToken(refreshToken);
