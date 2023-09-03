@@ -24,8 +24,8 @@ export default () => {
     res: Response,
     next: NextFunction
   ) {
-    console.error(err.stack);
-    res.status(err.status).json({
+    console.error(err?.stack);
+    res.status(err?.status ?? 400).json({
       message: err.message,
       errorStack: err.stack,
     });

@@ -4,7 +4,33 @@ import express, { Request, Response } from "express";
 
 const router = express.Router();
 
-const refreshTokens: string[] = [];
+router.post(
+  "/sign-up",
+  spiderman.express.catchAsync(async (req: Request, res: Response) => {
+    const { username, password } = req.body;
+    const account = (
+      await spiderman
+        .knex("accounts")
+        .select("*")
+        .where("username", "like", `${username}`)
+    )[0];
+
+    if (account) throw new ApiError(400, "duplicate username.");
+
+    const saltRounds = 10;
+    const hash = spiderman.bcrypt.hashSync(password, saltRounds);
+
+    const result = await spiderman.knex("accounts").insert({
+      username,
+      password: hash,
+    });
+
+    res.status(200).json({
+      message: "success",
+      result,
+    });
+  })
+);
 
 router.post(
   "/login",
@@ -19,8 +45,6 @@ router.post(
     if (!account) throw new ApiError(401);
 
     // 加密方式
-    // const saltRounds = 10;
-    // const hash = spiderman.bcrypt.hashSync(myPassword, saltRounds);
     const isPasswordValid = await spiderman.bcrypt.compare(
       password,
       account.password
@@ -32,8 +56,28 @@ router.post(
     };
     const accessToken = spiderman.jwt.generateAccessToken(tokenPayload);
     const refreshToken = spiderman.jwt.generateRefreshToken(tokenPayload);
-    refreshTokens.push(refreshToken);
-    console.log("refreshTokens:", refreshTokens);
+
+    const userToken = (
+      await spiderman.knex("user_tokens").select("*").where({
+        account_id: account.id,
+      })
+    )[0];
+
+    if (userToken) {
+      await spiderman
+        .knex("user_tokens")
+        .where({
+          account_id: account.id,
+        })
+        .update({
+          token: refreshToken,
+        });
+    } else {
+      await spiderman.knex("user_tokens").insert({
+        account_id: account.id,
+        token: refreshToken,
+      });
+    }
 
     res.status(200).json({
       accessToken,
@@ -43,26 +87,42 @@ router.post(
   })
 );
 
-router.post("/token", (req: Request, res: Response) => {
-  const refreshToken = req.body.token;
-  if (refreshToken == null) throw new ApiError(401);
-  if (!refreshTokens.includes(refreshToken)) throw new ApiError(403);
+router.post(
+  "/token",
+  spiderman.express.catchAsync(async (req: Request, res: Response) => {
+    const refreshToken = req.body.token;
+    if (refreshToken == null) throw new ApiError(401);
 
-  const tokenPayload = spiderman.jwt.decryptRefreshToken(refreshToken);
-  const accessToken = spiderman.jwt.generateAccessToken(tokenPayload);
+    const userToken = (
+      await spiderman.knex("user_tokens").select("*").where({
+        token: refreshToken,
+      })
+    )[0];
+    if (!userToken) throw new ApiError(403);
 
-  res.status(200).json({
-    accessToken,
-  });
-});
+    const tokenPayload = spiderman.jwt.decryptRefreshToken(refreshToken);
+    const accessToken = spiderman.jwt.generateAccessToken(tokenPayload);
 
-router.delete("/logout", (req: Request, res: Response) => {
-  refreshTokens.splice(refreshTokens.indexOf(req.body.token), 1);
-  console.log("refreshTokens:", refreshTokens);
+    res.status(200).json({
+      accessToken,
+    });
+  })
+);
 
-  res.status(200).json({
-    message: "success",
-  });
-});
+router.delete(
+  "/logout",
+  spiderman.express.catchAsync(async (req: Request, res: Response) => {
+    await spiderman
+      .knex("user_tokens")
+      .where({
+        token: req.body.token,
+      })
+      .delete();
+
+    res.status(200).json({
+      message: "success",
+    });
+  })
+);
 
 export default router;

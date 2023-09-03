@@ -18,7 +18,9 @@ export default () => {
   }
 
   function generateRefreshToken({ username }: { username: string }): string {
-    return jwt.sign({ username }, process.env.REFRESH_TOKEN_SECRET || "");
+    return jwt.sign({ username }, process.env.REFRESH_TOKEN_SECRET || "", {
+      expiresIn: "30d",
+    });
   }
 
   function decryptRefreshToken(token: string): { username: string } {
