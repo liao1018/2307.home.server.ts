@@ -5,7 +5,7 @@ dotenv.config();
 
 import express from "express";
 import http from "http";
-// import https from 'https';
+import https from "https";
 import spiderman from "@/spiderman";
 
 import routes from "@/routes";
@@ -17,9 +17,24 @@ import routes from "@/routes";
   app.use(routes);
   app.use(spiderman.express.errorHandler);
 
-  const port = 3000;
-  const httpServer = http.createServer(app);
-  httpServer.listen(port, () => {
-    console.log(`app listening on port ${port}`);
-  });
+  // 新增 http server
+  (() => {
+    const httpPort = 3000;
+    const httpServer = http.createServer(app);
+    httpServer.listen(httpPort, () => {
+      console.log(`http app listening on port ${httpPort}`);
+    });
+  })();
+
+  // 新增 https server
+  (() => {
+    const privateKey = process.env.SERVER_KEY;
+    const certificate = process.env.SERVER_CERT;
+    const credentials = { key: privateKey, cert: certificate };
+    const httpsPort = 3001;
+    const httpsServer = https.createServer(credentials, app);
+    httpsServer.listen(httpsPort, () => {
+      console.log(`https app listening on port ${httpsPort}`);
+    });
+  })();
 })();
